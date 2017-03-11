@@ -1,0 +1,2 @@
+require('choo')
+require('jquery')

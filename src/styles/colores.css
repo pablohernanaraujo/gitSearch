@@ -1,0 +1,7 @@
+:root {
+  --color-fuente: #333;
+  --color-fondo: #fff;
+  --color-bordo: #a13a55;
+  --color-rojo: #f03f37;
+  --color-principal: var(--color-rojo);
+}
