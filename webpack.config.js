@@ -14,7 +14,8 @@ var plugins = [
     compress: {warnings: false},
     output: {comments: false},
     sourceMap: true
-  })
+  }),
+  new webpack.NormalModuleReplacementPlugin(/\/iconv-loader$/, 'node-noop')
 ]
 
 module.exports = {
@@ -55,7 +56,15 @@ module.exports = {
         exclude: /node_modules/,
         loader: 'babel-loader',
         query: {
-          presets: ['es2015']
+          presets: ['es2015','stage-0'],
+          plugins: [
+            ["transform-runtime", {
+              "helpers": false, // defaults to true
+              "polyfill": false, // defaults to true
+              "regenerator": true, // defaults to true
+              "moduleName": "babel-runtime" // defaults to "babel-runtime"
+            }]
+          ]
         }
       }
     ]

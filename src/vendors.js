@@ -1,2 +1,3 @@
 require('choo')
-require('jquery')
+require('node-fetch')
+require('co')

@@ -1,7 +1,8 @@
 var html = require('choo/html')
 var choo = require('choo')
 var app = choo()
-var $ = require('jquery')
+var fetch = require('isomorphic-fetch')
+var co = require('co')
 require('./styles/styles.css')
 
 app.model({
@@ -25,7 +26,7 @@ app.model({
       return {user: usuarioData, error: ''}
     },
     reposData: function (state, data) {
-      return {repos: data, deshabilitar: '', error: ''}
+      return {repos: data, error: '', deshabilitar: ''}
     },
     error: function (state, data) {
       return {deshabilitar: 'deshabilitar', error: 'Username does not exist'}
@@ -33,26 +34,35 @@ app.model({
   },
   effects: {
     getUser: (state, data, send, done) => {
-      $.ajax({
-        url: `https://api.github.com/users/${state.username}`,
-        data: {
-          client_id: '9e85a1593e50dfcdd468',
-          client_secret: '441c931f99b75e65d2d0dfb373a68424031fad44'
+      const url = `https://api.github.com/users/${state.username}`
+      const datos = {
+        client_id: '9e85a1593e50dfcdd468',
+        client_secret: '441c931f99b75e65d2d0dfb373a68424031fad44'
+      }
+
+      function * getUserData () {
+        const response = yield fetch(url, datos)
+        const userData = yield response.json()
+        return userData
+      }
+
+      function * getReposData () {
+        const response = yield fetch(url + '/repos', datos)
+        const reposData = yield response.json()
+        return reposData
+      }
+
+      const userFetch = co(getUserData)
+      userFetch.then(user => {
+        if (user.message === 'Not Found') {
+          send('error', user.message, done)
+        } else {
+          send('userData', user, done)
+          const reposFetch = co(getReposData)
+          reposFetch.then(repos => send('reposData', repos, done))
         }
-      }).done((user) => {
-        send('userData', user, done)
-        $.ajax({
-          url: `https://api.github.com/users/${state.username}/repos`,
-          data: {
-            client_id: '9e85a1593e50dfcdd468',
-            client_secret: '441c931f99b75e65d2d0dfb373a68424031fad44',
-            sort: 'created: asc'
-          }
-        }).done((repos) => {
-          send('reposData', repos, done)
-        })
-      }).fail((error) => {
-        send('error', error, done)
+      }).catch(error => {
+        console.log(error)
       })
     }
   }
@@ -92,7 +102,7 @@ function mainView (state, prev, send) {
                 </idv>
                 <div class="extras">
                   <div><strong>Company:</strong> ${usuario.company}</div>
-                  <div><strong>Website/Blog:</strong> 
+                  <div><strong>Website/Blog:</strong>
                     <a href="${usuario.blog}" target="_blank">${usuario.blog}</a>
                   </div>
                   <div><strong>Location:</strong> ${usuario.location}</div>
@@ -119,7 +129,7 @@ function mainView (state, prev, send) {
                 <div class="repo-boton">
                   <a href="${repo.html_url}" target="_blank">Repo page</a>
                 </div>
-              </div>  
+              </div>
             `)}
           </div>
         </div>
